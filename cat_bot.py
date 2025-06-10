@@ -1,31 +1,46 @@
 # Import libraries
-import os
-import discord
-import requests
-from dotenv import load_dotenv
-import random
+import os # To access system files
+import discord # For everything discord related
+import requests # For requesting from servers
+from dotenv import load_dotenv # For storing private files
+import random # For the gacha mechanics
 
 # Load API keys from .env file
-load_dotenv()
-cat_API = os.getenv("CAT_API_KEY")
-discord_token = os.getenv("DISCORD_TOKEN")
+load_dotenv() # Loads environment variables from a .env file into the OS environment (e.g., API keys, tokens)
+cat_API = os.getenv("CAT_API_KEY") # Get an environment variable
+discord_token = os.getenv("DISCORD_TOKEN") # Get an environment variable
 
 # Function to fetch a meme (from r/memes if no subreddit is given)
 def get_meme(subreddit="memes"):
-    response = requests.get(f'https://meme-api.com/gimme/{subreddit}')
-    data = response.json()
-    title = data.get("title")
-    url = data.get("url")
-    return title, url if data else None
+    """
+    Fetches a meme from the specified subreddit using the Meme API.
+    Args:
+        subreddit (str): The subreddit to fetch the meme from. Defaults to "memes".
+    Returns:
+        tuple: A tuple containing the title and URL of the meme, or (None, None) if not found.
+    """
+    response = requests.get(f'https://meme-api.com/gimme/{subreddit}') # Uses requests to get data from a server
+    data = response.json() # Returns the JSON encoded content from the response
+    title = data.get("title") # Gets the title from the JSON
+    url = data.get("url") # Gets the URL form the JSON
+    return (title, url) if data else (None, None) # Only return values if both title and url are present
 
 # Function to fetch a random cat image using TheCatAPI
 def get_cat_meme():
+    """
+    Fetches a cat image using the Cat API.
+    Args:
+        None
+    Returns:
+        str: The URL of the cat image, or None if not found.
+    """
     headers = {"x-api-key": cat_API}
-    response = requests.get('https://api.thecatapi.com/v1/images/search', headers=headers)
-    data = response.json()[0]
-    url = data.get("url")
-    return url if data else None
+    response = requests.get('https://api.thecatapi.com/v1/images/search', headers=headers) # Uses requests to get data from a server
+    data = response.json()[0] # Get the first (and only) result from the returned JSON list
+    url = data.get("url") # Gets the URL form the JSON
+    return url if data else None # Returns url if there's a valid data, None if there's not
 
+# A dictionary that contains images of cats for the gacha system
 cat_images = {
     "common" : [
         "https://i.pinimg.com/736x/10/bc/bd/10bcbdc51fdacda178fbf70267e19251.jpg",
@@ -64,29 +79,51 @@ cat_images = {
     ]
 }
 
+# Function to pull a random cat image (gacha)
 def cat_gacha():
+    """
+    Pulls a random cat image from the cat pool and returns its rarity and URL.
+    Args:
+        None
+    Returns:
+        tuple: A tuple containing the rarity of the cat image and its URL.
+    """
     rarity = random.choices(["common", "rare", "epic"],
-                           weights = [80, 15, 5])[0]
-    url = random.choice(cat_images[rarity])
+                           weights = [80, 15, 5])[0] # Randomly selects a rarity based on given weights: 80% common, 15% rare, 5% epic
+    url = random.choice(cat_images[rarity]) # Fetches a url from the cat pool
     return rarity, url
 
 # Bot client class
 class MyClient(discord.Client):
+    # Bot status (Playing with cats!)
     async def on_ready(self):
-        await self.change_presence(activity=discord.Game(name="with cats!"))
+        """
+        Called when the bot has successfully connected to Discord.
+        Sets the bot's presence and prints a confirmation message.
+        Args:
+            None
+        Returns:
+            None
+        """
+        await self.change_presence(activity=discord.Game(name="with cats!")) 
         print(f'Logged in as {self.user}!')
 
     async def on_message(self, message):
+        """
+        Called when a message is sent in a channel the bot has access to.
+        Args:
+            message (discord.Message): The message object containing the content and author.
+        Returns:
+            None
+        """
         # Ignore the bot's own messages
         if message.author == self.user:
             return
-
         content = message.content.lower()
-
-        # 📖 Help command
-        if content.startswith('$help'):
+        # Help command
+        if content.startswith('$help'): # Help command that explains all available bot commands
             help_text = """
-            **🐾 CatBot Commands**
+            **Cat Bot 🐾 Commands**
             `$meme` - Get a meme from r/memes
             `$imagefrom [subreddit]` - Get an image from a specific subreddit
             `$cat` - Get a random cat picture
@@ -95,47 +132,52 @@ class MyClient(discord.Client):
             """
             await message.channel.send(help_text)
 
-        # 🖼 Meme command (default subreddit)
+        # Meme command (default subreddit)
         elif content.startswith('$meme'):
-            title, url = get_meme()
-            if title and url:
-                embed = discord.Embed(title=f"From r/memes\n{title}")
+            title, url = get_meme() # Calls the get meme function
+            try:
+                embed = discord.Embed(title=f"From r/memes\n{title}") # Embeds a text and the image itself
                 embed.set_image(url=url)
-                await message.channel.send(embed=embed)
-            else:
-                await message.channel.send("Oops! Couldn't fetch a meme.")
+                await message.channel.send(embed=embed) # Sends the meme
+            except Exception as e:
+                await message.channel.send("Oops! Couldn't fetch a meme.") # Error
+                print(f"Error fetching meme: {e}")
 
-        # 📷 Reddit image command with subreddit argument
+        # Reddit image post command with subreddit argument
         elif content.startswith('$imagefrom'):
-            parts = content.split()
-            subreddit = parts[1] if len(parts) > 1 else "memes"
-            title, url = get_meme(subreddit)
-            if title and url:
+            parts = content.split() # Splits the message into words (e.g., ['$imagefrom', 'cats'])
+            subreddit = parts[1] if len(parts) > 1 else "memes" # Fetches the subreddit given by the user
+            title, url = get_meme(subreddit) # Calls the get meme function with a specified subreddit
+            try: # Same process as the $meme command
                 embed = discord.Embed(title=f"From r/{subreddit}\n{title}")
                 embed.set_image(url=url)
                 await message.channel.send(embed=embed)
-            else:
-                await message.channel.send(f"Couldn't fetch an image from r/{subreddit}")
+            except Exception as e:
+                await message.channel.send(f"Oops, Couldn't fetch an image from r/{subreddit}")
+                print(f"Error fetching meme: {e}")
 
-        # 🐱 Cat pic command
+        # Cat pic command
         elif content.startswith('$cat'):
-            url = get_cat_meme()
-            if url:
+            url = get_cat_meme() # Calls the get cat meme function
+            try: # Same process as $meme
                 embed = discord.Embed(title="Here's a cat pic!")
                 embed.set_image(url=url)
                 await message.channel.send(embed=embed)
-            else:
+            except Exception as e:
                 await message.channel.send("Oops! Couldn't fetch a cat pic.")
+                print(f"Error fetching meme: {e}")
         
+        # Cat gacha pull command
         elif content.startswith("$pull"):
-            rarity, url = cat_gacha()
-            if rarity == "epic":
+            rarity, url = cat_gacha() # Calls the cat gacha function
+            if rarity == "epic": # Sets embed color: gold for epic, blue for rare, gray for common
                 color = discord.Color.gold()
             elif rarity == "rare":
                 color = discord.Color.blue()
             else:
                 color = discord.Color.light_gray()
-            embed = discord.Embed(title=f"You pulled a {rarity} cat!",
+            rarity_message = f"a {rarity}" if rarity != "epic" else f"an {rarity}"
+            embed = discord.Embed(title=f"You pulled {rarity_message} cat!",
                                   color=color)
             embed.set_image(url=url)
             await message.channel.send(embed=embed)

@@ -1,9 +1,9 @@
 # **Discord Cat Bot 🐾**
-This is a personal project for building a multifunctional Discord bot using Python. It started as a learning project from the Codedex Intermediate Python project and has since grown into a fun, meme-loving, cat-themed bot!
+This is a personal project for building a multifunctional Discord bot using Python. It started as a learning project from the [Codedex Intermediate Python project](https://www.codedex.io/projects/build-a-discord-bot-with-python) and has since grown into a fun, meme-loving, cat-themed bot!
 
 The bot currently supports basic commands for fetching memes, cat images, and includes a gacha-style "pull" system for collecting cat images. Future updates will include a collection system, crafting mechanics, and an in-bot currency system.
 
-## Features & Commands
+## **Features & Commands**
 - `$meme` - Fetches a random meme from r/memes.
 - `$imagefrom [subreddit]` - Fetches a random image from the specified subreddit.
 - `$cat` - Returns a random cat picture from TheCatAPI.
@@ -13,7 +13,7 @@ The bot currently supports basic commands for fetching memes, cat images, and in
 
 ## **Directory Structure**
 ```
-Codedex/
+Discord Cat/
 ├── .gitignore           # Files and directories excluded from Git tracking
 ├── cat_bot.py           # Main bot script
 ├── requirements.txt     # Python dependencies
